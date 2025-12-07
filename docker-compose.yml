@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  word-mcp-server:
+    container_name: word-mcp-server
+    image: word-mcp-server:latest
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Dockerfile
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    environment:
+      - TZ=Africa/Nairobi
+      - PORT=8004
+    volumes:
+      - ./word-documents:/app/documents
+    networks:
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik"
+      - "traefik.http.routers.word-mcp-server.rule=Host(`word.mac.mndambuki.me.ke`)"
+      - "traefik.http.routers.word-mcp-server.entrypoints=websecure"
+      - "traefik.http.routers.word-mcp-server.tls=true"
+      - "traefik.http.services.word-mcp-server.loadbalancer.server.port=8004"
+      - "mcp.enable=true"
+      - "mcp.name=word-server"
+      - "mcp.description=Word document generation"
+      - "mcp.version=1.0.0"
+      - "mcp.port=8004"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  traefik:
+    external: true
